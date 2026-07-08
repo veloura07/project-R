@@ -1,37 +1,51 @@
 """
 self_model.py — System self-monitoring and health engine for CAMP.
 
-Implements a dedicated CognitiveState that monitors the health of the
-CAMP observability service itself (memory, scheduler load, processed event count).
+Implements a dedicated self-model using AdaptiveInteraction (AIx) to monitor
+the health of the CAMP observability service itself.
 """
 
 import time
 import os
 from typing import Dict, Any
-from RealityOS.kernel.cognitive_state import CognitiveState, Constraint
-from RealityOS.kernel.evolution import AnalyticEvolution
+from RealityOS.kernel.adaptive_interaction import AdaptiveInteraction
+from RealityOS.kernel.evolution import DecentralizedEvolution
+from RealityOS.kernel.calculus import Calculus
 
 
 class SelfModel:
     def __init__(self, uid: str = "camp_system"):
-        self.evolution_engine = AnalyticEvolution(eta=0.05, alpha=0.2)
+        self.evolution_engine = DecentralizedEvolution(eta_base=0.05)
         
         # State vector representation for the system:
-        # x[0] = memory_usage_mb
-        # x[1] = event_queue_depth
-        # x[2] = ticks_per_second
-        # x[3] = alerts_raised_total
-        self.state = CognitiveState(
+        # z_a[0] = memory_usage_mb
+        # z_a[1] = event_queue_depth
+        # z_a[2] = ticks_per_second
+        # z_a[3] = alerts_raised_total
+        self.ix = AdaptiveInteraction(
+            state_a_id="system_metrics",
+            state_b_id="system_limits",
+            dim=4,
             uid=uid,
-            type_tag="system_self",
-            x=[0.0, 0.0, 0.0, 0.0],
-            value=1.0,  # High value self-model
-            constraints=[
-                Constraint(name="memory_ceiling", dimension=0, upper=512.0, weight=10.0),
-                Constraint(name="queue_backlog", dimension=1, upper=1000.0, weight=5.0)
-            ]
+            capacity=1.0  # System model has maximum capacity
         )
-        self.state.ensure_dimensions()
+        
+        # Constraints: memory ceiling at 512MB, queue depth ceiling at 1000
+        def memory_constraint(z: List[float]) -> float:
+            return 10.0 * (max(0.0, z[0] - 512.0) ** 2)
+            
+        def queue_constraint(z: List[float]) -> float:
+            return 5.0 * (max(0.0, z[1] - 1000.0) ** 2)
+            
+        Calculus.Constrain(self.ix, memory_constraint)
+        Calculus.Constrain(self.ix, queue_constraint)
+        
+        # Set initial limits metadata
+        self.ix.meta["constraints"] = [
+            {"name": "memory_limit", "upper": 512.0},
+            {"name": "queue_limit", "upper": 1000.0}
+        ]
+        
         self.start_time = time.time()
         self.tick_count = 0
 
@@ -51,20 +65,32 @@ class SelfModel:
         elapsed = time.time() - self.start_time
         ticks_per_sec = self.tick_count / max(1.0, elapsed)
 
-        obs = [mem_mb, float(queue_depth), ticks_per_sec, float(alerts_count)]
+        obs_a = [mem_mb, float(queue_depth), ticks_per_sec, float(alerts_count)]
+        obs_b = [mem_mb * 0.9, float(queue_depth) * 0.9, ticks_per_sec, float(alerts_count)]
         
         # Evolve system self-state
-        self.evolution_engine.step(self.state, obs)
+        Calculus.Observe(self.ix, obs_a, obs_b, confidence=1.0, source="self_model")
+        self.evolution_engine.step(self.ix)
 
         # Meta flags update
-        self.state.meta["uptime"] = elapsed
-        self.state.meta["stable"] = mem_mb < 256.0 and queue_depth < 100
+        self.ix.meta["uptime"] = elapsed
+        self.ix.meta["stable"] = mem_mb < 256.0 and queue_depth < 100
 
+        # Return UI compatible telemetry
         return {
             "uptime": elapsed,
             "memory_mb": mem_mb,
             "queue_depth": queue_depth,
             "ticks_per_sec": ticks_per_sec,
             "alerts_raised": alerts_count,
-            "system_state": self.state.snapshot()
+            "system_state": {
+                "uid": self.ix.uid,
+                "x": list(self.ix.z_a),
+                "belief": list(self.ix.z_b),
+                "surprise": self.ix.meta.get("surprise", 0.0),
+                "energy": self.ix.capacity,
+                "tau": list(self.ix.precision),
+                "timestamp": time.time(),
+                "version": len(self.ix.evidence)
+            }
         }

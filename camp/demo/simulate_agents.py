@@ -118,17 +118,17 @@ def run_simulation(ticks: int = 40, log_file: str = "agent_logs.jsonl"):
             agent_id = obs["agent_id"]
             
             # --- Evaluate Naive Alerts (Instant thresholds) ---
-            agent_config = watcher.agents[agent_id]
+            agent_config = watcher.interactions[agent_id]
             is_naive_alert = False
             
             # Check Cost Limit
-            if obs["cost"] > agent_config.constraints[0].upper: is_naive_alert = True
+            if obs["cost"] > agent_config.meta["constraints"][0]["upper"]: is_naive_alert = True
             # Check Latency Limit
-            if obs["latency"] > agent_config.constraints[1].upper: is_naive_alert = True
+            if obs["latency"] > agent_config.meta["constraints"][1]["upper"]: is_naive_alert = True
             # Check Error Limit
-            if obs["error"] > agent_config.constraints[2].upper: is_naive_alert = True
+            if obs["error"] > agent_config.meta["constraints"][2]["upper"]: is_naive_alert = True
             # Check Token Limit
-            if obs["tokens"] > agent_config.constraints[3].upper: is_naive_alert = True
+            if obs["tokens"] > agent_config.meta["constraints"][3]["upper"]: is_naive_alert = True
             
             if is_naive_alert:
                 naive_alert_count += 1
@@ -162,7 +162,7 @@ def run_simulation(ticks: int = 40, log_file: str = "agent_logs.jsonl"):
                 print(f"Tick {tick:02d} | {agent_id:<16} | {val_str:<15} | {naive_flag:<12} | {belief_str:<15} | {telemetry['surprise']:.4f}")
 
         # Tick Alert Engine to process state and register alerts
-        active_agents = list(watcher.agents.values())
+        active_agents = list(watcher.interactions.values())
         tick_camp_alerts = alert_engine.process_tick_alerts(active_agents)
         camp_alert_count += len(tick_camp_alerts)
         

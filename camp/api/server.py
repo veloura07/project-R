@@ -50,7 +50,7 @@ manager = ConnectionManager()
 async def self_model_broadcaster():
     while True:
         try:
-            agents_list = list(watcher.agents.values())
+            agents_list = list(watcher.interactions.values())
             # Gather active alerts
             alert_engine.process_tick_alerts(agents_list)
             
@@ -63,7 +63,7 @@ async def self_model_broadcaster():
             payload = {
                 "type": "system_tick",
                 "system": metrics,
-                "agents": [s.snapshot() for s in agents_list],
+                "agents": watcher.get_all_states(),
                 "alerts": alert_engine.get_history(10)
             }
             await manager.broadcast(payload)
@@ -104,7 +104,7 @@ async def observe_agent(req: AgentObserveRequest):
         )
         
         # Trigger alert processing tick
-        agents_list = list(watcher.agents.values())
+        agents_list = list(watcher.interactions.values())
         alert_engine.process_tick_alerts(agents_list)
         
         # Broadcast observation details to WebSocket
@@ -124,14 +124,34 @@ async def get_agents():
 
 @app.get("/api/agents/{agent_id}")
 async def get_agent_details(agent_id: str):
+    import time
     agent = watcher.get_agent(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Agent '{agent_id}' not found")
     
-    # Return snapshot + history details
+    # Return snapshot + history details mapped from evidence logs
+    history_list = []
+    for ev in agent.evidence:
+        history_list.append({
+            "x": ev.data[0],
+            "belief": ev.data[1],
+            "timestamp": ev.timestamp
+        })
+
+    snapshot_data = {
+        "uid": agent.uid,
+        "x": list(agent.z_a),
+        "belief": list(agent.z_b),
+        "surprise": agent.meta.get("surprise", 0.0),
+        "energy": agent.capacity,
+        "tau": list(agent.precision),
+        "timestamp": time.time(),
+        "version": len(agent.evidence)
+    }
+
     return {
-        "snapshot": agent.snapshot(),
-        "history": list(agent.history.buffer),
+        "snapshot": snapshot_data,
+        "history": history_list,
         "meta": agent.meta
     }
 
