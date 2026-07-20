@@ -35,6 +35,12 @@ class RelationalEngine:
         # Local time derived dynamically from change
         self.local_time = 0.0
 
+        # Trajectory history and ACE Engine integration
+        self.trajectory_history: List[List[List[float]]] = []
+        from RealityOS.kernel.ace_engine import ACEEngine
+        self.ace = ACEEngine(size=self.size, dim=self.dim)
+
+
     def observe(self, node_idx: int, y: List[float]):
         """Observe: updates G's coordinates with observed y."""
         if 0 <= node_idx < self.size:
@@ -75,11 +81,14 @@ class RelationalEngine:
                     # d/dG (lambda * C(G)^2) = 2 * lambda * C(G) * dC_dG
                     grad[i][d] += 2 * l_val * base_val * dC_dG
 
-        # 2. Update G and estimate delta_G
+        # 2. Update G and estimate delta_G using adaptive eta (dynamic scaling under constraint violation)
+        max_violation = max([abs(c_fn(self.G)) for c_fn in self.constraints.values()] + [0.0])
+        adaptive_eta = self.eta * (1.0 + min(2.0, max_violation))
+        
         displacement = 0.0
         for i in range(self.size):
             for d in range(self.dim):
-                step = -self.eta * grad[i][d]
+                step = -adaptive_eta * grad[i][d]
                 self.delta_G[i][d] = step / dt
                 self.G[i][d] += step
                 displacement += step ** 2
@@ -93,6 +102,14 @@ class RelationalEngine:
         # 4. Event-driven time: dt emerges from coordinate displacement magnitude
         # If nothing changes, time does not advance.
         self.local_time += math.sqrt(displacement) + 0.01
+
+        # 5. Track trajectory history and step the ACE Engine
+        import copy
+        self.trajectory_history.append(copy.deepcopy(self.G))
+        if len(self.trajectory_history) > 100:
+            self.trajectory_history.pop(0)
+        self.ace.evolve(self, self.trajectory_history)
+
 
     def compose(self, other: 'RelationalEngine'):
         """Compose: concatenates systems and combines constraints."""
@@ -118,7 +135,16 @@ class RelationalEngine:
         1. Pairwise distance invariants over a trajectory history.
         2. Radial conservation invariant (if no trajectory provided).
         """
+        # First check if the ACE engine has active constraints
+        active_discovered = []
+        for name, h in self.ace.hypotheses.items():
+            if h.status == "active":
+                active_discovered.append((name, h.violation_fn))
+        if active_discovered:
+            return active_discovered
+
         discovered = []
+
         
         if trajectory is not None and len(trajectory) > 2:
             # Trajectory shape: T (steps) x N (nodes) x dim
