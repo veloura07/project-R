@@ -1,3 +1,17 @@
+```
+      ___           ___           ___                       ___           ___     
+     /\  \         /\  \         /\  \          ___        /\__\         /\  \    
+    /::\  \       /::\  \        \:\  \        /\  \      /:/ _/_       /::\  \   
+   /:/\:\  \     /:/\:\  \        \:\  \       \:\  \    /:/ /\__\     /:/\:\  \  
+  /:/ /::\  \   /::\~\:\  \       /::\  \      /::\__\  /:/ /:/ _/_   /::\~\:\  \ 
+ /:/_/:/\:\__\ /:/\:\ \:\__\     /:/\:\__\  __/:/\/__/ /:/_/:/ /\__\ /:/\:\ \:\__\
+ \:\/:/  \/__/ \:\~\:\ \/__/    /:/  \/__/ /\_\/::\  \ \:\/:/ /:/  / \/_|::\/:/  /
+  \::/__/       \:\ \:\__\     /:/  /      \:\__\/\__\ \::/ /:/  /     |:|\::/  / 
+   \:\  \        \:\ \/__/     \/__/        \/__/\/__/  \/_/:/  /      |:|~~/  /  
+    \:\__\        \:\__\                                 /::/  /       |:|  /   
+     \/__/         \/__/                                 \/__/         \|__|    
+```
+
 # Aether: The Operating System for Stateful Intelligence
 
 > **Introducing State Computing — a new paradigm for continuous, stateful, and constrained intelligent systems, powered by the Aether Runtime.**
@@ -24,7 +38,13 @@ graph TD
     ACE[ACE Engine] -.->|Hypothesizes & compiles laws| StateGraph[State Graph Map]
 ```
 
-### 1.1 The Shift: Stateful Intelligence vs. Stateless APIs
+### 1.1 The Aether Axioms
+Aether operates on three core mathematical principles:
+1.  **Axiom of Conservation of Intention:** Coordinates $G$ do not displace without a driving goal vector or a constraint gradient pull. If surprise is zero, the system rests.
+2.  **Axiom of Shadow Pricing of Stress:** KKT dual variables ($\Lambda$) represent the informational stress of system boundaries. Stress propagates dynamically through constraint connections.
+3.  **Axiom of Relational Locality:** The local timeline step ($dt$) is computed from displacement. Redundant computational updates are frozen where states are stable, guaranteeing $O(k)$ sparse scaling.
+
+### 1.2 Paradigm Shift: State Computing vs. Stateless APIs
 
 | Dimension | Stateless Model (Transformers / LLMs) | State Computing (Aether Substrate) |
 | :--- | :--- | :--- |
@@ -36,7 +56,28 @@ graph TD
 
 ---
 
-## 2. Core Architecture & Component Breakdown
+## 2. Developer Experience: A Comparative Study
+
+### 2.1 The Stateless Way (Complex & Fragile)
+Checking constraints (e.g. keeping an agent's run costs below a budget) in standard frameworks requires manual polling, retries, and database logs:
+```python
+# Polling, checking, querying databases, handling errors manually
+cost = db.query_cost(agent_id)
+if cost > cost_limit:
+    alert_operator()
+    agent.terminate()  # Hard cut-off, no smooth adaptation
+```
+
+### 2.2 The Aether Way (Declarative & Continuous)
+In Aether, the constraint is modeled as a physical boundary. Coordinates are projected mathematically to stay inside the boundary, debouncing temporary noise:
+```python
+# Register the constraint once; the KKT solver guarantees enforcement
+agent.apply_constraint("budget_limit", lambda G: G[0] - cost_limit)
+```
+
+---
+
+## 3. Core Architecture & Component Breakdown
 
 Aether is structured into the **Aether Runtime** (the core substrate), the **ACE Engine** (the constraint compiler), and the **CAMP Observatory** (the inspection application).
 
@@ -65,9 +106,9 @@ project-R/
 
 ---
 
-## 3. How It Works (Under the Hood)
+## 4. How It Works (Under the Hood)
 
-### 3.1 Relational-Action Calculus
+### 4.1 Relational-Action Calculus
 The coordinate space $G$ evolves to minimize the scalar **Relational Action**:
 $$\mathcal{R}[G] = \int_0^T \left[ D_{KL}(P_{\text{post}}(\Delta G \mid G) \parallel P_{\text{prior}}(\Delta G \mid G)) + \sum_\alpha \Lambda_\alpha C_\alpha(\Delta G)^2 \right] dt$$
 
@@ -79,7 +120,7 @@ At each step, Aether runs a **KKT Primal-Dual optimization loop** in [relational
     $$\Lambda_\alpha \leftarrow \max(0, \Lambda_\alpha + \alpha_{\text{dual}} C_\alpha(G)^2)$$
     These dual multipliers ($\Lambda$) represent the **shadow prices** of the constraints.
 
-### 3.2 Adaptive Constraint Evolution (ACE)
+### 4.2 Adaptive Constraint Evolution (ACE)
 Instead of relying on statically defined rules, the **ACE Engine** in [ace_engine.py](file:///c:/Users/namir/Downloads/project r/project-R/RealityOS/kernel/ace_engine.py) acts as a passive scientific compiler:
 1.  **Hypothesize:** Scans historical trajectories to find invariant templates (pairwise distance, radial orbits, coordinate locks).
 2.  **Score & Promote:** Evaluates candidates. If the violation variance is low and score exceeds a threshold ($\ge 0.8$), it promotes the candidate to an `active` constraint.
@@ -88,7 +129,7 @@ Instead of relying on statically defined rules, the **ACE Engine** in [ace_engin
 
 ---
 
-## 4. Developer SDK Quickstart
+## 5. Developer SDK Quickstart
 
 Here is how developers interact with the Aether State Computing SDK in [sdk.py](file:///c:/Users/namir/Downloads/project r/project-R/RealityOS/sdk.py):
 
@@ -129,7 +170,7 @@ drone_1.intervene([-0.5, 0.5])  # Inject external impulse force
 
 ---
 
-## 5. Scientific Roadmap: Phased Evolution
+## 6. Scientific Roadmap: Phased Evolution
 
 Aether's capabilities are designed to scale through successive scientific phases:
 
@@ -167,9 +208,9 @@ Aether's capabilities are designed to scale through successive scientific phases
 
 ---
 
-## 6. Installation & Execution
+## 7. Installation & Execution
 
-### 6.1 Local Installation (Development Mode)
+### 7.1 Local Installation (Development Mode)
 Aether uses standard PEP-517 packaging:
 ```bash
 # Navigate to project root
@@ -183,7 +224,7 @@ Alternatively, build the source distributions and wheels locally:
 python build_package.py
 ```
 
-### 6.2 Running the Demos
+### 7.2 Running the Demos
 
 #### 1. Run the Developer SDK Demo
 Demonstrates forks, simulations, interventions, rewinds, and replays:
@@ -205,7 +246,7 @@ python -m camp.api.server
 Open your browser and navigate to the live dashboard:
 👉 **[http://127.0.0.1:8000/dashboard/index.html](http://127.0.0.1:8000/dashboard/index.html)**
 
-### 6.3 Run Unit Tests
+### 7.3 Run Unit Tests
 Validate the core tracking, belief momentum, and the newly implemented ACE evolutionary loop:
 ```bash
 # Run all unit tests
