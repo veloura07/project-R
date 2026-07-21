@@ -80,6 +80,7 @@ class Universe:
         self.eta = eta
         self.alpha_dual = alpha_dual
         self.is_initialized = False
+        self.use_negotiation = False
 
     def create_state(self, name: str, dim: int = 2) -> State:
         """Factory method to instantiate and register a state object in the universe."""
@@ -137,9 +138,15 @@ class Universe:
                 # Drive G directly towards intent force
                 for d in range(s.dim):
                     self.engine.G[i][d] += self.eta * s._goal_force[d]
+                if hasattr(self.engine, "node_active") and i < len(self.engine.node_active):
+                    self.engine.node_active[i] = True
+                    self.engine.node_sleep_ticks[i] = 0
                     
         # Solve KKT constraints & evolve ACE candidates
-        self.engine.resolve(dt)
+        if getattr(self, "use_negotiation", False):
+            self.engine.resolve_negotiation(dt)
+        else:
+            self.engine.resolve(dt)
 
     def simulate(self, steps: int, dt: float = 0.1) -> List[List[List[float]]]:
         """Project future trajectories on a branched timeline without altering the active coordinates."""
@@ -153,6 +160,7 @@ class Universe:
     def fork(self) -> 'Universe':
         """Deep copy the universe and state configurations to fork a branched simulation."""
         cloned = Universe(eta=self.eta, alpha_dual=self.alpha_dual)
+        cloned.use_negotiation = getattr(self, "use_negotiation", False)
         for s in self.states:
             cloned_state = State(s.name, s.dim)
             cloned_state._initial_coords = list(s.coords)
@@ -167,6 +175,10 @@ class Universe:
             cloned.engine.lambdas = copy.deepcopy(self.engine.lambdas)
             cloned.engine.constraints = dict(self.engine.constraints)
             cloned.engine.trajectory_history = copy.deepcopy(self.engine.trajectory_history)
+            if hasattr(self.engine, "node_active"):
+                cloned.engine.node_active = list(self.engine.node_active)
+                cloned.engine.node_sleep_ticks = list(self.engine.node_sleep_ticks)
+                cloned.engine.update_count = self.engine.update_count
         return cloned
 
     def merge(self, other: 'Universe') -> 'Universe':

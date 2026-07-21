@@ -7,48 +7,35 @@
                                          
 ```
 
-# Aether: The Operating System for Stateful Intelligence
+# Aether: A Physics of Computation Substrate for Stateful Intelligence
 
-> **Introducing State Computing — a new paradigm for continuous, stateful, and constrained intelligent systems, powered by the Aether Runtime.**
+> **Aether (RealityOS) is not another AI model. It is a first-principles, Constraint-Native Runtime designed to compute and maintain evolving reality instead of running stateless, isolated operations.**
 >
 > *Note: The underlying codebase modules remain located in the `RealityOS/` folder, representing the core kernel of the Aether platform.*
 
 ---
 
-## 1. Aether in 30 Seconds
+## 1. The Core Concept
 
-If you understand spreadsheets, you can understand Aether.
+Computers today process information. They don't maintain reality. 
 
-In **Excel**, you define cell values and formulas:
-*   You write: `C1 = A1 + B1`
-*   If you change `A1`, Excel automatically re-calculates `C1` to satisfy the formula.
+Every existing computational architecture (Transformers, RNNs, databases) is stateless between execution cycles or relies on ad-hoc persistence. Aether is a new paradigm: a runtime where computation is modeled as a continuous, constraint-governed state trajectory.
 
-**Aether does this for active, running software systems:**
-*   You define **State Objects** (coordinates like positions, costs, or latencies) and **Constraints** (invariants like budget ceilings, rigid tethers, or speed limits).
-*   When coordinates move (due to goal forces or environmental inputs), Aether's **KKT Solver** automatically calculates the correction forces to satisfy your constraints.
-*   **The result:** Your software is mathematically guaranteed to stay within the boundaries you set, automatically debouncing noisy data spikes.
+If you understand spreadsheets, you can understand Aether:
+*   In **Excel**, you define cells and formulas: `C1 = A1 + B1`. If you change `A1`, Excel automatically re-calculates `C1` to satisfy the formula.
+*   **Aether does this for active, running software and agent systems**: You define coordinate states and constraints. When coordinates drift due to goal forces or data, the engine automatically calculates the correction forces to satisfy constraints, guaranteeing safety boundaries and filtering network noise.
 
 ---
 
-## 2. Philosophy & Mental Model
+## 2. Philosophy: The Five Primitive Laws
 
-Aether is the active computational medium through which state interactions and constraint pressures propagate.
+Aether's entire runtime emerges recursively from five primitive laws:
 
-### 2.1 What Aether Is (and is NOT)
-
-| Aether is NOT | Aether IS |
-| :--- | :--- |
-| ❌ **An LLM or Model:** It has no weights and does not generate text. |  **A Stateful Runtime:** It manages the coordinates, velocities, and boundaries of systems *containing* LLMs or hardware. |
-| ❌ **A Database:** It doesn't just store static history. |  **A Living State Graph:** It simulates, projects, and evolves active state trajectories in real-time. |
-| ❌ **A Monitoring Tool:** It doesn't just watch and alert reactively. |  **An Active Constraint Optimizer:** It intervenes mathematically to prevent violations before they occur. |
-
-### 2.2 The Aether Axioms
-> [!NOTE]
-> These mathematical principles govern all coordinate transitions in the Aether environment:
-
-*   **Axiom of Conservation of Intention:** Coordinates $G$ do not displace without a driving goal force or a constraint gradient pull. If surprise is zero, the system rests.
-*   **Axiom of Shadow Pricing of Stress:** KKT dual variables ($\Lambda$) represent the informational stress of system boundaries. Stress propagates dynamically through constraint connections.
-*   **Axiom of Relational Locality:** The local timeline step ($dt$) is computed from displacement. Redundant calculations are frozen where states are stable, guaranteeing $O(k)$ sparse scaling.
+1.  **Law 1: Everything is an Event.** Every change, observation, motion, or decay is a discrete Event.
+2.  **Law 2: Events create Relationships.** Interactions establish causal and dependency links. Topologies are fundamental; coordinates are inferred post-hoc.
+3.  **Law 3: Relationships become Constraints.** When relationships remain invariant over repeated sequences, they graduate into active, executable **Constraint Processes**.
+4.  **Law 4: Constraints bend State.** State coordinates are not static; they are the local equilibrium produced by constraint pressures pulling on the manifold.
+5.  **Law 5: State creates new Events.** State coordinate adjustments trigger new events and propagate cascades, closing the loop.
 
 ---
 
@@ -150,41 +137,24 @@ drone_1.intervene([-0.5, 0.5])  # Inject external impulse force
 
 ---
 
-## 6. Scientific Roadmap: Phased Evolution
+## 6. The Strategic Roadmap
 
-Aether's capabilities scale through successive scientific phases:
+Aether's development is organized into three phases of increasing scale and impact:
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│ Phase 1: Adaptive Constraint Evolution (ACE)                 │
-│ The system invents, scores, and retires constraints.         │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-┌──────────────────────────────▼───────────────────────────────┐
-│ Phase 2: Constraint Graph & Ecology                          │
-│ Constraints cooperate, compete, and propagate pressure.      │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-┌──────────────────────────────▼───────────────────────────────┐
-│ Phase 3: Attractor Memory                                    │
-│ Experience reshapes the geometry of the energy landscape.   │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-┌──────────────────────────────▼───────────────────────────────┐
-│ Phase 4: Bifurcation & Multi-Attractor Dynamics             │
-│ Engine reasons over competing stable futures/saddle points. │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-┌──────────────────────────────▼───────────────────────────────┐
-│ Phase 5: Intrinsic Curiosity & Interventions                 │
-│ System chooses observations that maximize information gain.  │
-└──────────────────────────────┬───────────────────────────────┘
-                               │
-┌──────────────────────────────▼───────────────────────────────┐
-│ Phase 6: Self-Evolving Kernel                                │
-│ Operators, schedulers, and math are optimized dynamically.  │
-└──────────────────────────────────────────────────────────────┘
-```
+### Phase 1: Prove the Kernel (Months 0–12)
+*   **Goal**: Establish the core runtime proving constraint-governed state evolution and autonomous rule discovery.
+*   **Key Capabilities**: Localized Active Constraint Negotiation (ACN), event-driven cascades (sleep/wake cycles), and initial template-based constraint compilers.
+*   **Success Metric**: Stability of persistent coordinate representations over long step counts and clear benchmark updates reduction.
+
+### Phase 2: Make It a Platform (Months 12–24)
+*   **Goal**: Open the Aether runtime to external application developers through stable interfaces and high-level tooling.
+*   **Key Capabilities**: A Constraint Compiler/parser, developer-facing debugging toolings, and domain-specific SDKs (e.g., Robotics, CAMP Observability).
+*   **Success Metric**: Creation of constraint-native applications without requiring internal solver knowledge.
+
+### Phase 3: Build the Ecosystem (Months 24+)
+*   **Goal**: Scale from a single engine to a collaborative community and plug-and-play solver marketplace.
+*   **Key Capabilities**: Solver plugins (ADMM, Gradient Descent, KKT), open benchmark suites, and production pilots in industrial settings.
+*   **Success Metric**: Community-led library extensions and native integrations.
 
 ---
 

@@ -40,11 +40,19 @@ class RelationalEngine:
         from RealityOS.kernel.ace_engine import ACEEngine
         self.ace = ACEEngine(size=self.size, dim=self.dim)
 
+        # Active states and sleep trackers for ACN solver
+        self.node_active = [True] * size
+        self.node_sleep_ticks = [0] * size
+        self.update_count = 0
+
 
     def observe(self, node_idx: int, y: List[float]):
         """Observe: updates G's coordinates with observed y."""
         if 0 <= node_idx < self.size:
             self.G[node_idx] = list(y)
+            if hasattr(self, "node_active") and node_idx < len(self.node_active):
+                self.node_active[node_idx] = True
+                self.node_sleep_ticks[node_idx] = 0
 
     def perturb(self, name: str, constraint_fn: Callable[[List[List[float]]], float], initial_lambda: float = 1.0):
         """Perturb: registers a new constraint and initial Lagrange pressure."""
@@ -104,6 +112,102 @@ class RelationalEngine:
         self.local_time += math.sqrt(displacement) + 0.01
 
         # 5. Track trajectory history and step the ACE Engine
+        import copy
+        self.trajectory_history.append(copy.deepcopy(self.G))
+        if len(self.trajectory_history) > 100:
+            self.trajectory_history.pop(0)
+        self.ace.evolve(self, self.trajectory_history)
+
+
+    def resolve_negotiation(self, dt: float = 0.1, threshold: float = 0.01):
+        """
+        Resolve negotiation: Decentralized Active Constraint Negotiation solver.
+        Constraints autonomously propose local adjustment force vectors,
+        nodes locally broker updates, and inactive nodes sleep to conserve energy.
+        """
+        import math
+        eps = 1e-4
+        proposals = [[] for _ in range(self.size)] # list of (force_vector, constraint_name) per node
+        
+        # 1. Active Constraint processes calculate local force proposals
+        for name, c_fn in self.constraints.items():
+            l_val = self.lambdas.get(name, 1.0)
+            base_val = c_fn(self.G)
+            
+            if abs(base_val) < 1e-9:
+                continue
+                
+            for i in range(self.size):
+                # Calculate numerical gradient of C(G) w.r.t node i
+                grad_node = [0.0] * self.dim
+                is_connected = False
+                for d in range(self.dim):
+                    self.G[i][d] += eps
+                    val_plus = c_fn(self.G)
+                    self.G[i][d] -= 2 * eps
+                    val_minus = c_fn(self.G)
+                    self.G[i][d] += eps
+                    
+                    dC_dG = (val_plus - val_minus) / (2 * eps)
+                    if abs(dC_dG) > 1e-5:
+                        is_connected = True
+                    grad_node[d] = dC_dG
+                
+                if is_connected:
+                    # force proposal: -2 * lambda * C(G) * dC_dG
+                    force = [-2.0 * l_val * base_val * grad_node[d] for d in range(self.dim)]
+                    proposals[i].append((force, name))
+                    
+                    # Cascade trigger: wake up node if force is non-negligible
+                    force_mag = math.sqrt(sum(f**2 for f in force))
+                    if force_mag > 1e-4:
+                        if not self.node_active[i]:
+                            self.node_active[i] = True
+                            self.node_sleep_ticks[i] = 0
+
+        # 2. Node-level local consensus/brokerage and coordinate updates
+        displacement = 0.0
+        active_violation = max([abs(c_fn(self.G)) for c_fn in self.constraints.values()] + [0.0])
+        adaptive_eta = self.eta * (1.0 + min(2.0, active_violation))
+
+        for i in range(self.size):
+            if not self.node_active[i]:
+                self.node_sleep_ticks[i] += 1
+                continue
+                
+            # Local brokerage: sum proposed forces from all active constraints touching this node
+            net_force = [0.0] * self.dim
+            for force, name in proposals[i]:
+                for d in range(self.dim):
+                    net_force[d] += force[d]
+                    
+            node_displacement = 0.0
+            for d in range(self.dim):
+                step = adaptive_eta * net_force[d]
+                self.delta_G[i][d] = step / dt
+                self.G[i][d] += step
+                node_displacement += step ** 2
+                
+            displacement += node_displacement
+            self.update_count += 1
+            
+            # 3. Information-driven sleep gating
+            if math.sqrt(node_displacement) < threshold:
+                self.node_sleep_ticks[i] += 1
+                if self.node_sleep_ticks[i] >= 5:
+                    self.node_active[i] = False
+            else:
+                self.node_sleep_ticks[i] = 0
+
+        # 4. KKT Dual Ascent: update multipliers based on constraint violation
+        for name, c_fn in self.constraints.items():
+            violation = c_fn(self.G)
+            self.lambdas[name] = max(0.01, self.lambdas[name] + self.alpha_dual * (violation ** 2))
+
+        # 5. Intrinsic event-driven local time step advancement
+        self.local_time += math.sqrt(displacement) + 0.01
+
+        # 6. Save trajectory history and step the ACE Engine
         import copy
         self.trajectory_history.append(copy.deepcopy(self.G))
         if len(self.trajectory_history) > 100:
